@@ -39,7 +39,7 @@ interface AppState {
   deleteScheme: (id: string) => void;
   updateBalconySize: (width: number, height: number) => void;
 
-  addPlacedPlant: (plantId: string, x?: number, y?: number) => void;
+  addPlacedPlant: (plantId: string, x?: number, y?: number) => string | null;
   updatePlacedPlant: (id: string, data: Partial<PlacedPlant>) => void;
   removePlacedPlant: (id: string) => void;
 
@@ -158,20 +158,19 @@ export const useStore = create<AppState>((set, get) => ({
   addPlacedPlant: (plantId, x, y) => {
     const { currentSchemeId, schemes, getCurrentScheme } = get();
     const scheme = getCurrentScheme();
-    if (!scheme) return;
+    if (!scheme) return null;
 
     const plant = PLANTS.find(p => p.id === plantId);
-    if (!plant) return;
+    if (!plant) return null;
 
     let finalX: number;
     let finalY: number;
     const potSize = POT_SIZE_VALUE[plant.potSize];
     const halfPot = potSize / 2;
-    const pad = 30;
 
     if (typeof x === 'number' && typeof y === 'number') {
-      finalX = Math.max(halfPot + pad, Math.min(scheme.balconyWidth - halfPot - pad, x));
-      finalY = Math.max(halfPot + pad, Math.min(scheme.balconyHeight - halfPot - pad, y));
+      finalX = Math.max(halfPot, Math.min(scheme.balconyWidth - halfPot, x));
+      finalY = Math.max(halfPot, Math.min(scheme.balconyHeight - halfPot, y));
     } else {
       const placedCount = scheme.placedPlants.length;
       const cols = Math.ceil(Math.sqrt(placedCount + 1));
@@ -202,6 +201,7 @@ export const useStore = create<AppState>((set, get) => ({
     get().regenerateEvents();
     get().regenerateShoppingList();
     get().persist();
+    return newPlant.id;
   },
 
   updatePlacedPlant: (id, data) => {

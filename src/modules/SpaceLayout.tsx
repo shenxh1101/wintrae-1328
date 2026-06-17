@@ -50,7 +50,8 @@ export default function SpaceLayout() {
       const customEvent = e as CustomEvent<{ plantId: string; x: number; y: number }>;
       const { plantId, x, y } = customEvent.detail;
       if (plantId) {
-        addPlacedPlant(plantId, x, y);
+        const newId = addPlacedPlant(plantId, x, y);
+        if (newId) setSelectedId(newId);
       }
     };
     window.addEventListener('add-plant', handleAddPlant);

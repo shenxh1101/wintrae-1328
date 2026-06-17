@@ -5,11 +5,21 @@ interface PlantCardProps {
   plant: Plant;
   onAdd: (plant: Plant) => void;
   onShowDetail: (plant: Plant) => void;
+  onDragStart?: (e: React.DragEvent, plantId: string) => void;
+  onDragEnd?: () => void;
+  draggable?: boolean;
 }
 
-export function PlantCard({ plant, onAdd, onShowDetail }: PlantCardProps) {
+export function PlantCard({ plant, onAdd, onShowDetail, onDragStart, onDragEnd, draggable = true }: PlantCardProps) {
   return (
-    <div className="card-hover group flex flex-col h-full">
+    <div
+      className={`card-hover group flex flex-col h-full ${draggable ? 'cursor-grab active:cursor-grabbing' : ''}`}
+      draggable={draggable}
+      onDragStart={e => {
+        if (onDragStart) onDragStart(e, plant.id);
+      }}
+      onDragEnd={onDragEnd}
+    >
       <div className="p-4 flex flex-col flex-1">
         <div className="flex items-start justify-between mb-3">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-50 to-cream-100 flex items-center justify-center text-3xl shadow-sm">
