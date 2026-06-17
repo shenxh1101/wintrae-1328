@@ -28,6 +28,7 @@ interface AppState {
   schemes: Scheme[];
   currentSchemeId: string | null;
   activeModule: ModuleKey;
+  lastAddedPlacedPlantId: string | null;
 
   init: () => void;
   getCurrentScheme: () => Scheme | undefined;
@@ -42,6 +43,7 @@ interface AppState {
   addPlacedPlant: (plantId: string, x?: number, y?: number) => string | null;
   updatePlacedPlant: (id: string, data: Partial<PlacedPlant>) => void;
   removePlacedPlant: (id: string) => void;
+  setLastAddedPlacedPlantId: (id: string | null) => void;
 
   addCalendarEvent: (event: Omit<CalendarEvent, 'id'>) => void;
   updateCalendarEvent: (id: string, data: Partial<CalendarEvent>) => void;
@@ -80,6 +82,7 @@ export const useStore = create<AppState>((set, get) => ({
   schemes: [],
   currentSchemeId: null,
   activeModule: 'library',
+  lastAddedPlacedPlantId: null,
 
   init: () => {
     const saved = loadSchemes();
@@ -97,7 +100,27 @@ export const useStore = create<AppState>((set, get) => ({
       activeId = schemes[0].id;
     }
 
-    set({ schemes, currentSchemeId: activeId, activeModule: 'library' });
+    // 迁移老数据：给没有 nickname 的植物补充默认昵称
+    const plantMap = new Map(PLANTS.map(p => [p.id, p]));
+    schemes = schemes.map(s => {
+      let changed = false;
+      const placed = s.placedPlants.map(pp => {
+        if (!pp.nickname) {
+          changed = true;
+          const plant = plantMap.get(pp.plantId);
+          const name = plant?.name || '植物';
+          // 给同种植物按顺序编号
+          const sameInScheme = s.placedPlants.filter(
+            (p, idx) => p.plantId === pp.plantId && idx < s.placedPlants.indexOf(pp)
+          ).length;
+          return { ...pp, nickname: `${name}${sameInScheme + 1}` };
+        }
+        return pp;
+      });
+      return changed ? { ...s, placedPlants: placed } : s;
+    });
+
+    set({ schemes, currentSchemeId: activeId, activeModule: 'library', lastAddedPlacedPlantId: null });
     get().persist();
   },
 
@@ -163,6 +186,9 @@ export const useStore = create<AppState>((set, get) => ({
     const plant = PLANTS.find(p => p.id === plantId);
     if (!plant) return null;
 
+    const sameSpeciesCount = scheme.placedPlants.filter(p => p.plantId === plantId).length;
+    const nickname = `${plant.name}${sameSpeciesCount + 1}`;
+
     let finalX: number;
     let finalY: number;
     const potSize = POT_SIZE_VALUE[plant.potSize];
@@ -186,6 +212,7 @@ export const useStore = create<AppState>((set, get) => ({
     const newPlant: PlacedPlant = {
       id: generateId(),
       plantId,
+      nickname,
       x: finalX,
       y: finalY,
       potSize: plant.potSize as PotSize,
@@ -197,7 +224,7 @@ export const useStore = create<AppState>((set, get) => ({
         ? { ...s, placedPlants: [...s.placedPlants, newPlant], updatedAt: new Date().toISOString() }
         : s
     );
-    set({ schemes: newSchemes });
+    set({ schemes: newSchemes, lastAddedPlacedPlantId: newPlant.id });
     get().regenerateEvents();
     get().regenerateShoppingList();
     get().persist();
@@ -205,7 +232,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   updatePlacedPlant: (id, data) => {
-    const { currentSchemeId, schemes } = get();
+    const { currentSchemeId, schemes, lastAddedPlacedPlantId } = get();
     set({
       schemes: schemes.map(s =>
         s.id === currentSchemeId
@@ -217,11 +244,14 @@ export const useStore = create<AppState>((set, get) => ({
           : s
       ),
     });
+    if (data.nickname) {
+      get().regenerateEvents();
+    }
     get().persist();
   },
 
   removePlacedPlant: (id) => {
-    const { currentSchemeId, schemes } = get();
+    const { currentSchemeId, schemes, lastAddedPlacedPlantId } = get();
     set({
       schemes: schemes.map(s =>
         s.id === currentSchemeId
@@ -232,10 +262,14 @@ export const useStore = create<AppState>((set, get) => ({
             }
           : s
       ),
+      lastAddedPlacedPlantId: lastAddedPlacedPlantId === id ? null : lastAddedPlacedPlantId,
     });
+    get().regenerateEvents();
     get().regenerateShoppingList();
     get().persist();
   },
+
+  setLastAddedPlacedPlantId: (id) => set({ lastAddedPlacedPlantId: id }),
 
   addCalendarEvent: (event) => {
     const { currentSchemeId, schemes } = get();

@@ -223,20 +223,31 @@ export function PlantLibrary() {
                 const left = cmToPx(placed.x) - potSizePx / 2;
                 const top = cmToPx(placed.y) - potSizePx / 2;
                 return (
-                  <div
-                    key={placed.id}
-                    className="absolute rounded-full flex items-center justify-center ring-2 ring-earth-400/40 shadow-sm pointer-events-none"
-                    style={{
-                      width: potSizePx,
-                      height: potSizePx,
-                      left,
-                      top,
-                      background: `radial-gradient(circle at 30% 30%, #e8d5b7 0%, #d4a373 50%, #bc6c25 100%)`,
-                      fontSize: Math.max(10, potSizePx * 0.38),
-                    }}
-                    title={plant.name}
-                  >
-                    <span className="drop-shadow-sm">{plant.emoji}</span>
+                  <div key={placed.id}>
+                    <div
+                      className="absolute rounded-full flex items-center justify-center ring-2 ring-earth-400/40 shadow-sm pointer-events-none"
+                      style={{
+                        width: potSizePx,
+                        height: potSizePx,
+                        left,
+                        top,
+                        background: `radial-gradient(circle at 30% 30%, #e8d5b7 0%, #d4a373 50%, #bc6c25 100%)`,
+                        fontSize: Math.max(10, potSizePx * 0.38),
+                      }}
+                      title={`${placed.nickname}（${plant.name}）`}
+                    >
+                      <span className="drop-shadow-sm">{plant.emoji}</span>
+                    </div>
+                    <div
+                      className="absolute text-[9px] bg-white/80 text-gray-600 border border-gray-200 px-1.5 py-px rounded-full whitespace-nowrap pointer-events-none"
+                      style={{
+                        left: cmToPx(placed.x),
+                        top: cmToPx(placed.y) + potSizePx / 2 + 4,
+                        transform: 'translateX(-50%)',
+                      }}
+                    >
+                      {placed.nickname}
+                    </div>
                   </div>
                 );
               })}

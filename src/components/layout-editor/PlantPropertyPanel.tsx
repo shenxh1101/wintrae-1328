@@ -53,9 +53,10 @@ export function PlantPropertyPanel({
             {plant.emoji}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-lg font-bold text-gray-800 truncate">{plant.name}</div>
+            <div className="text-lg font-bold text-gray-800 truncate">{selectedPlant.nickname}</div>
             <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
               <span className="tag-green">{LIGHT_LABELS[plant.lightNeed]}</span>
+              <span>{plant.name}</span>
               <span>{POT_SIZE_LABELS[selectedPlant.potSize].split(' ')[0]}</span>
             </div>
           </div>
@@ -70,6 +71,20 @@ export function PlantPropertyPanel({
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+            <span className="text-brand-500">🏷️</span>
+            植物昵称
+          </div>
+          <input
+            type="text"
+            className="input"
+            value={selectedPlant.nickname}
+            onChange={e => onUpdate({ nickname: e.target.value })}
+            placeholder="给这株植物起个名字"
+          />
+        </div>
+
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
             <Maximize2 size={16} className="text-brand-500" />

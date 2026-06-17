@@ -220,18 +220,20 @@ export function BalconyCanvas({
                   fontSize: Math.max(12, potSizePx * 0.4),
                 }}
                 onMouseDown={e => handlePlantMouseDown(e, placed)}
-                title={`${plant.name} ${potSizeCm}cm`}
+                title={`${placed.nickname}（${plant.name}） ${potSizeCm}cm`}
               >
                 <span className="drop-shadow-sm">{plant.emoji}</span>
               </div>
 
-              {isSelected && !isDragging && (
-                <div
-                  className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] bg-brand-500 text-white px-2 py-0.5 rounded-full whitespace-nowrap z-20"
-                >
-                  {plant.name}
-                </div>
-              )}
+              <div
+                className={`absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] px-1.5 py-0.5 rounded-full whitespace-nowrap z-20 transition-colors ${
+                  isSelected
+                    ? 'bg-brand-500 text-white font-medium'
+                    : 'bg-white/80 text-gray-600 border border-gray-200'
+                }`}
+              >
+                {placed.nickname}
+              </div>
 
               {coords && (
                 <div

@@ -8,9 +8,19 @@ export function generateEventsForPlants(
   plants: Plant[],
   existingEvents: CalendarEvent[]
 ): CalendarEvent[] {
-  const events: CalendarEvent[] = [...existingEvents];
+  const placedPlantIds = new Set(placedPlants.map(p => p.id));
+  const plantIds = new Set(placedPlants.map(p => p.plantId));
+
+  const filteredExisting = existingEvents.filter(e => {
+    if (e.placedPlantId) {
+      return placedPlantIds.has(e.placedPlantId);
+    }
+    return plantIds.has(e.plantId);
+  });
+
+  const events: CalendarEvent[] = [...filteredExisting];
   const plantMap = new Map(plants.map(p => [p.id, p]));
-  const existingKeys = new Set(existingEvents.map(e => `${e.plantId}-${e.type}-${e.date}`));
+  const existingKeys = new Set(filteredExisting.map(e => `${e.placedPlantId || e.plantId}-${e.type}-${e.date}`));
 
   placedPlants.forEach(pp => {
     const plant = plantMap.get(pp.plantId);
@@ -25,15 +35,16 @@ export function generateEventsForPlants(
       const dayNum = Math.floor((d.getTime() - startOfMonth.getTime()) / (1000 * 60 * 60 * 24));
       if (dayNum % waterInterval === 0) {
         const dateStr = formatDate(d);
-        const key = `${pp.plantId}-water-${dateStr}`;
+        const key = `${pp.id}-water-${dateStr}`;
         if (!existingKeys.has(key)) {
           events.push({
             id: generateId(),
             type: 'water',
             plantId: pp.plantId,
+            placedPlantId: pp.id,
             date: dateStr,
             completed: d < today,
-            description: `给 ${plant.name} 浇水（每${waterInterval}天一次）`,
+            description: `给 ${pp.nickname} 浇水（每${waterInterval}天一次）`,
           });
           existingKeys.add(key);
         }
@@ -45,15 +56,16 @@ export function generateEventsForPlants(
       const d = addDays(startOfMonth, w * fertilizeInterval + 3);
       if (d <= endOfMonth && (plant.season.includes(getCurrentSeason()) || plant.season.includes('all'))) {
         const dateStr = formatDate(d);
-        const key = `${pp.plantId}-fertilize-${dateStr}`;
+        const key = `${pp.id}-fertilize-${dateStr}`;
         if (!existingKeys.has(key)) {
           events.push({
             id: generateId(),
             type: 'fertilize',
             plantId: pp.plantId,
+            placedPlantId: pp.id,
             date: dateStr,
             completed: d < today,
-            description: `给 ${plant.name} 施肥：${plant.fertilizerNeed}`,
+            description: `给 ${pp.nickname} 施肥：${plant.fertilizerNeed}`,
           });
           existingKeys.add(key);
         }
@@ -66,15 +78,16 @@ export function generateEventsForPlants(
         const harvestDate = addDays(seasonStart, plant.harvestDays);
         if (harvestDate.getMonth() === today.getMonth()) {
           const dateStr = formatDate(harvestDate);
-          const key = `${pp.plantId}-harvest-${dateStr}`;
+          const key = `${pp.id}-harvest-${dateStr}`;
           if (!existingKeys.has(key)) {
             events.push({
               id: generateId(),
               type: 'harvest',
               plantId: pp.plantId,
+              placedPlantId: pp.id,
               date: dateStr,
               completed: harvestDate < today,
-              description: `${plant.name} 预计收获期`,
+              description: `${pp.nickname} 预计收获期`,
             });
             existingKeys.add(key);
           }
@@ -85,15 +98,16 @@ export function generateEventsForPlants(
     const pruneDate = addDays(startOfMonth, 15);
     if (pruneDate <= endOfMonth) {
       const dateStr = formatDate(pruneDate);
-      const key = `${pp.plantId}-prune-${dateStr}`;
+      const key = `${pp.id}-prune-${dateStr}`;
       if (!existingKeys.has(key) && needsPruning(plant)) {
         events.push({
           id: generateId(),
           type: 'prune',
           plantId: pp.plantId,
+          placedPlantId: pp.id,
           date: dateStr,
           completed: pruneDate < today,
-          description: `修剪 ${plant.name}：打顶促进分枝，摘除黄叶`,
+          description: `修剪 ${pp.nickname}：打顶促进分枝，摘除黄叶`,
         });
         existingKeys.add(key);
       }
@@ -104,15 +118,16 @@ export function generateEventsForPlants(
       const sowDate = addDays(startOfMonth, 1);
       if (sowDate <= endOfMonth) {
         const dateStr = formatDate(sowDate);
-        const key = `${pp.plantId}-sow-${dateStr}`;
+        const key = `${pp.id}-sow-${dateStr}`;
         if (!existingKeys.has(key)) {
           events.push({
             id: generateId(),
             type: 'sow',
             plantId: pp.plantId,
+            placedPlantId: pp.id,
             date: dateStr,
             completed: sowDate < today,
-            description: `${plant.name} 播种期：${plant.season.map(s => SEASON_LABELS[s]).join('、')}播种，${plant.harvestDays ? `约${plant.harvestDays}天可采收` : ''}`,
+            description: `${pp.nickname} 播种期：${plant.season.map(s => SEASON_LABELS[s]).join('、')}播种，${plant.harvestDays ? `约${plant.harvestDays}天可采收` : ''}`,
           });
           existingKeys.add(key);
         }
@@ -132,17 +147,18 @@ export function generateEventsForPlants(
         const isRegularRepot = true;
         if (isFirstRepot || isRegularRepot) {
           const dateStr = formatDate(repotDate);
-          const key = `${pp.plantId}-repot-${dateStr}`;
+          const key = `${pp.id}-repot-${dateStr}`;
           if (!existingKeys.has(key)) {
             events.push({
               id: generateId(),
               type: 'repot',
               plantId: pp.plantId,
+              placedPlantId: pp.id,
               date: dateStr,
               completed: repotDate < today,
               description: isFirstRepot
-                ? `${plant.name} 小苗换盆：移入${POT_SIZE_LABELS[plant.potSize].split(' ')[0]}，检查根系是否缠绕`
-                : `${plant.name} 换盆检查：查看根是否满盆，${plant.height > 50 ? '高株植物建议加底肥和支架' : '换入更大花盆'}`,
+                ? `${pp.nickname} 小苗换盆：移入${POT_SIZE_LABELS[plant.potSize].split(' ')[0]}，检查根系是否缠绕`
+                : `${pp.nickname} 换盆检查：查看根是否满盆，${plant.height > 50 ? '高株植物建议加底肥和支架' : '换入更大花盆'}`,
             });
             existingKeys.add(key);
           }

@@ -1,9 +1,10 @@
-import { LayoutWarning, Plant } from '@/types';
+import { LayoutWarning, Plant, PlacedPlant } from '@/types';
 import { AlertTriangle, AlertCircle, Sun, Wind } from 'lucide-react';
 
 interface LayoutWarningsProps {
   warnings: LayoutWarning[];
   plants: Plant[];
+  placedPlants: PlacedPlant[];
   placedPlantMap: Map<string, { plant: Plant; placedId: string }>;
   onSelectPlant: (id: string | null) => void;
   selectedId: string | null;
@@ -11,6 +12,7 @@ interface LayoutWarningsProps {
 
 export function LayoutWarnings({
   warnings,
+  placedPlants,
   placedPlantMap,
   onSelectPlant,
   selectedId,
@@ -41,6 +43,8 @@ export function LayoutWarnings({
   };
 
   const getPlantName = (placedId: string) => {
+    const pp = placedPlants.find(p => p.id === placedId);
+    if (pp?.nickname) return pp.nickname;
     const entry = placedPlantMap.get(placedId);
     return entry?.plant.name ?? '未知';
   };

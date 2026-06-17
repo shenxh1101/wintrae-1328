@@ -25,6 +25,7 @@ export interface Plant {
 export interface PlacedPlant {
   id: string;
   plantId: string;
+  nickname: string;
   x: number;
   y: number;
   potSize: PotSize;
@@ -38,6 +39,7 @@ export interface CalendarEvent {
   id: string;
   type: CalendarEventType;
   plantId: string;
+  placedPlantId?: string;
   date: string;
   completed: boolean;
   description: string;

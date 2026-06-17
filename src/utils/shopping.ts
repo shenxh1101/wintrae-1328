@@ -11,9 +11,9 @@ export function generateShoppingList(
   const plantMap = new Map(plants.map(p => [p.id, p]));
 
   const soilVolume: Record<string, { vol: number; type: string }> = {};
-  const fertilizerAgg: Record<string, number> = {};
-  const seedAgg: Record<string, number> = {};
-  let supportCount = 0;
+  const fertilizerAgg: Record<string, { count: number; plants: string[] }> = {};
+  const seedItems: { name: string; nickname: string }[] = [];
+  const supportItems: { nickname: string }[] = [];
 
   placedPlants.forEach(pp => {
     const plant = plantMap.get(pp.plantId);
@@ -26,11 +26,13 @@ export function generateShoppingList(
     soilVolume[key].vol += vol;
 
     const fert = plant.fertilizerNeed.split('，')[0].split('：')[0];
-    fertilizerAgg[fert] = (fertilizerAgg[fert] || 0) + 1;
+    if (!fertilizerAgg[fert]) fertilizerAgg[fert] = { count: 0, plants: [] };
+    fertilizerAgg[fert].count += 1;
+    fertilizerAgg[fert].plants.push(pp.nickname);
 
-    seedAgg[plant.name + '种子'] = (seedAgg[plant.name + '种子'] || 0) + 1;
+    seedItems.push({ name: `${pp.nickname} 种子`, nickname: pp.nickname });
 
-    if (plant.supportNeed) supportCount++;
+    if (plant.supportNeed) supportItems.push({ nickname: pp.nickname });
   });
 
   Object.values(soilVolume).forEach(({ vol, type }) => {
@@ -47,41 +49,41 @@ export function generateShoppingList(
     }
   });
 
-  Object.entries(fertilizerAgg).forEach(([name, count]) => {
+  Object.entries(fertilizerAgg).forEach(([name, data]) => {
     generated.push({
       id: generateId(),
       category: 'fertilizer' as ShoppingCategory,
-      name: name || '复合肥',
-      quantity: Math.max(1, Math.ceil(count / 3)),
+      name: `${name}（${data.plants.join('、')}）`,
+      quantity: Math.max(1, Math.ceil(data.count / 3)),
       unit: '袋',
       status: 'pending',
       generated: true,
     });
   });
 
-  Object.entries(seedAgg).forEach(([name, count]) => {
+  seedItems.forEach(item => {
     generated.push({
       id: generateId(),
       category: 'seed' as ShoppingCategory,
-      name,
-      quantity: count,
+      name: item.name,
+      quantity: 1,
       unit: '包',
       status: 'pending',
       generated: true,
     });
   });
 
-  if (supportCount > 0) {
+  supportItems.forEach(item => {
     generated.push({
       id: generateId(),
       category: 'support' as ShoppingCategory,
-      name: '植物支架/竹竿',
-      quantity: supportCount,
+      name: `${item.nickname} 支架/竹竿`,
+      quantity: 1,
       unit: '根',
       status: 'pending',
       generated: true,
     });
-  }
+  });
 
   generated.push({
     id: generateId(),
