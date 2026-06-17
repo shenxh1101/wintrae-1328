@@ -48,7 +48,7 @@ interface AppState {
   addCalendarEvent: (event: Omit<CalendarEvent, 'id'>) => void;
   updateCalendarEvent: (id: string, data: Partial<CalendarEvent>) => void;
   removeCalendarEvent: (id: string) => void;
-  regenerateEvents: () => void;
+  regenerateEvents: (refreshPlacedPlantIds?: string[]) => void;
 
   addCareRecord: (record: Omit<CareRecord, 'id'>) => void;
   updateCareRecord: (id: string, data: Partial<CareRecord>) => void;
@@ -245,7 +245,8 @@ export const useStore = create<AppState>((set, get) => ({
       ),
     });
     if (data.nickname) {
-      get().regenerateEvents();
+      get().regenerateEvents([id]);
+      get().regenerateShoppingList();
     }
     get().persist();
   },
@@ -316,12 +317,12 @@ export const useStore = create<AppState>((set, get) => ({
     get().persist();
   },
 
-  regenerateEvents: () => {
+  regenerateEvents: (refreshPlacedPlantIds) => {
     const { currentSchemeId, schemes, getCurrentScheme } = get();
     const scheme = getCurrentScheme();
     if (!scheme) return;
 
-    const events = generateEventsForPlants(scheme.placedPlants, PLANTS, scheme.calendarEvents);
+    const events = generateEventsForPlants(scheme.placedPlants, PLANTS, scheme.calendarEvents, refreshPlacedPlantIds);
     set({
       schemes: schemes.map(s =>
         s.id === currentSchemeId

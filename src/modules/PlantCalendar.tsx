@@ -56,7 +56,7 @@ export default function PlantCalendar() {
           </p>
         </div>
         <button
-          onClick={regenerateEvents}
+          onClick={() => regenerateEvents()}
           disabled={placedPlantsCount === 0}
           className="h-10 px-5 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 text-white text-sm font-medium hover:from-brand-600 hover:to-brand-700 shadow-soft flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-brand-500 disabled:hover:to-brand-600"
         >

@@ -6,16 +6,21 @@ const CURRENT_MONTH = new Date();
 export function generateEventsForPlants(
   placedPlants: PlacedPlant[],
   plants: Plant[],
-  existingEvents: CalendarEvent[]
+  existingEvents: CalendarEvent[],
+  refreshPlacedPlantIds?: string[]
 ): CalendarEvent[] {
   const placedPlantIds = new Set(placedPlants.map(p => p.id));
   const plantIds = new Set(placedPlants.map(p => p.plantId));
+  const refreshSet = new Set(refreshPlacedPlantIds || []);
 
   const filteredExisting = existingEvents.filter(e => {
     if (e.placedPlantId) {
-      return placedPlantIds.has(e.placedPlantId);
+      if (!placedPlantIds.has(e.placedPlantId)) return false;
+      if (refreshSet.has(e.placedPlantId)) return false;
+    } else {
+      if (!plantIds.has(e.plantId)) return false;
     }
-    return plantIds.has(e.plantId);
+    return true;
   });
 
   const events: CalendarEvent[] = [...filteredExisting];
