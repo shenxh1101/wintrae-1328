@@ -9,11 +9,13 @@ import { PlantPropertyPanel } from '@/components/layout-editor/PlantPropertyPane
 import { Ruler, Maximize2, Trash2, AlertTriangle } from 'lucide-react';
 
 export default function SpaceLayout() {
-  const scheme = useStore(s => s.getCurrentScheme());
+  const schemes = useStore(s => s.schemes);
+  const currentSchemeId = useStore(s => s.currentSchemeId);
   const addPlacedPlant = useStore(s => s.addPlacedPlant);
   const updatePlacedPlant = useStore(s => s.updatePlacedPlant);
   const removePlacedPlant = useStore(s => s.removePlacedPlant);
   const updateBalconySize = useStore(s => s.updateBalconySize);
+  const scheme = schemes.find(s => s.id === currentSchemeId);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draggingPlantId, setDraggingPlantId] = useState<string | null>(null);
 
@@ -46,9 +48,9 @@ export default function SpaceLayout() {
   useEffect(() => {
     const handleAddPlant = (e: Event) => {
       const customEvent = e as CustomEvent<{ plantId: string; x: number; y: number }>;
-      const { plantId } = customEvent.detail;
+      const { plantId, x, y } = customEvent.detail;
       if (plantId) {
-        addPlacedPlant(plantId);
+        addPlacedPlant(plantId, x, y);
       }
     };
     window.addEventListener('add-plant', handleAddPlant);

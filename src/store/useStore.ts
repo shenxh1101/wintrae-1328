@@ -10,6 +10,7 @@ import {
   CareRecordType,
   ShoppingCategory,
   ShoppingStatus,
+  POT_SIZE_VALUE,
 } from '@/types';
 import {
   loadSchemes,
@@ -38,7 +39,7 @@ interface AppState {
   deleteScheme: (id: string) => void;
   updateBalconySize: (width: number, height: number) => void;
 
-  addPlacedPlant: (plantId: string) => void;
+  addPlacedPlant: (plantId: string, x?: number, y?: number) => void;
   updatePlacedPlant: (id: string, data: Partial<PlacedPlant>) => void;
   removePlacedPlant: (id: string) => void;
 
@@ -154,7 +155,7 @@ export const useStore = create<AppState>((set, get) => ({
     get().persist();
   },
 
-  addPlacedPlant: (plantId) => {
+  addPlacedPlant: (plantId, x, y) => {
     const { currentSchemeId, schemes, getCurrentScheme } = get();
     const scheme = getCurrentScheme();
     if (!scheme) return;
@@ -162,22 +163,34 @@ export const useStore = create<AppState>((set, get) => ({
     const plant = PLANTS.find(p => p.id === plantId);
     if (!plant) return;
 
-    const placedCount = scheme.placedPlants.length;
-    const cols = Math.ceil(Math.sqrt(placedCount + 1));
-    const row = Math.floor(placedCount / cols);
-    const col = placedCount % cols;
-    const padding = 60;
-    const usableW = scheme.balconyWidth - padding * 2;
-    const usableH = scheme.balconyHeight - padding * 2;
-    const x = padding + (usableW / Math.max(cols, 1)) * (col + 0.5);
-    const y = padding + (usableH / Math.max(Math.ceil((placedCount + 1) / cols), 1)) * (row + 0.5);
+    let finalX: number;
+    let finalY: number;
+    const potSize = POT_SIZE_VALUE[plant.potSize];
+    const halfPot = potSize / 2;
+    const pad = 30;
+
+    if (typeof x === 'number' && typeof y === 'number') {
+      finalX = Math.max(halfPot + pad, Math.min(scheme.balconyWidth - halfPot - pad, x));
+      finalY = Math.max(halfPot + pad, Math.min(scheme.balconyHeight - halfPot - pad, y));
+    } else {
+      const placedCount = scheme.placedPlants.length;
+      const cols = Math.ceil(Math.sqrt(placedCount + 1));
+      const row = Math.floor(placedCount / cols);
+      const col = placedCount % cols;
+      const padding = 60;
+      const usableW = scheme.balconyWidth - padding * 2;
+      const usableH = scheme.balconyHeight - padding * 2;
+      finalX = padding + (usableW / Math.max(cols, 1)) * (col + 0.5);
+      finalY = padding + (usableH / Math.max(Math.ceil((placedCount + 1) / cols), 1)) * (row + 0.5);
+    }
 
     const newPlant: PlacedPlant = {
       id: generateId(),
       plantId,
-      x,
-      y,
+      x: finalX,
+      y: finalY,
       potSize: plant.potSize as PotSize,
+      createdAt: new Date().toISOString(),
     };
 
     const newSchemes = schemes.map(s =>

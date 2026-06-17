@@ -29,6 +29,7 @@ export interface PlacedPlant {
   y: number;
   potSize: PotSize;
   notes?: string;
+  createdAt?: string;
 }
 
 export type CalendarEventType = 'sow' | 'repot' | 'fertilize' | 'prune' | 'harvest' | 'water';

@@ -1,4 +1,4 @@
-import { CalendarEvent, CalendarEventType, Plant, PlacedPlant } from '@/types';
+import { CalendarEvent, CalendarEventType, Plant, PlacedPlant, SEASON_LABELS, POT_SIZE_LABELS } from '@/types';
 import { generateId, formatDate, addDays } from './storage';
 
 const CURRENT_MONTH = new Date();
@@ -43,7 +43,7 @@ export function generateEventsForPlants(
     const fertilizeInterval = 14;
     for (let w = 0; w < 2; w++) {
       const d = addDays(startOfMonth, w * fertilizeInterval + 3);
-      if (d <= endOfMonth && plant.season.includes(getCurrentSeason())) {
+      if (d <= endOfMonth && (plant.season.includes(getCurrentSeason()) || plant.season.includes('all'))) {
         const dateStr = formatDate(d);
         const key = `${pp.plantId}-fertilize-${dateStr}`;
         if (!existingKeys.has(key)) {
@@ -98,6 +98,57 @@ export function generateEventsForPlants(
         existingKeys.add(key);
       }
     }
+
+    const currentSeason = getCurrentSeason();
+    if (plant.season.includes(currentSeason) || plant.season.includes('all')) {
+      const sowDate = addDays(startOfMonth, 1);
+      if (sowDate <= endOfMonth) {
+        const dateStr = formatDate(sowDate);
+        const key = `${pp.plantId}-sow-${dateStr}`;
+        if (!existingKeys.has(key)) {
+          events.push({
+            id: generateId(),
+            type: 'sow',
+            plantId: pp.plantId,
+            date: dateStr,
+            completed: sowDate < today,
+            description: `${plant.name} 播种期：${plant.season.map(s => SEASON_LABELS[s]).join('、')}播种，${plant.harvestDays ? `约${plant.harvestDays}天可采收` : ''}`,
+          });
+          existingKeys.add(key);
+        }
+      }
+    }
+
+    const repotDates = [
+      addDays(startOfMonth, 7),
+      addDays(startOfMonth, 21),
+    ];
+    const placedAt = pp.createdAt ? new Date(pp.createdAt) : null;
+    const daysSincePlaced = placedAt ? Math.floor((today.getTime() - placedAt.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+
+    repotDates.forEach(repotDate => {
+      if (repotDate <= endOfMonth && repotDate >= startOfMonth) {
+        const isFirstRepot = daysSincePlaced > 20 && daysSincePlaced < 60;
+        const isRegularRepot = true;
+        if (isFirstRepot || isRegularRepot) {
+          const dateStr = formatDate(repotDate);
+          const key = `${pp.plantId}-repot-${dateStr}`;
+          if (!existingKeys.has(key)) {
+            events.push({
+              id: generateId(),
+              type: 'repot',
+              plantId: pp.plantId,
+              date: dateStr,
+              completed: repotDate < today,
+              description: isFirstRepot
+                ? `${plant.name} 小苗换盆：移入${POT_SIZE_LABELS[plant.potSize].split(' ')[0]}，检查根系是否缠绕`
+                : `${plant.name} 换盆检查：查看根是否满盆，${plant.height > 50 ? '高株植物建议加底肥和支架' : '换入更大花盆'}`,
+            });
+            existingKeys.add(key);
+          }
+        }
+      }
+    });
   });
 
   return events;
